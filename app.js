@@ -469,6 +469,8 @@
       toast("Fill in date, pair, and positive entry / exit / size.");
       return;
     }
+    // guard against double-click saving the trade twice before the modal closes
+    $("#btnSaveTrade").disabled = true;
 
     if (state.editingId) {
       var idx = state.trades.findIndex(function (t) { return t.id === state.editingId; });

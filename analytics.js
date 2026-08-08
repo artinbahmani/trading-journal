@@ -219,7 +219,7 @@
       container.innerHTML = '<p class="chart-empty">No data.</p>';
       return;
     }
-    var rowH = 30, padTop = 6, labelW = 110, valueW = 84, W = 420;
+    var rowH = 30, padTop = 6, labelW = 150, valueW = 84, W = 420;
     var H = padTop * 2 + rows.length * rowH;
     var maxAbs = Math.max.apply(null, rows.map(function (r) { return Math.abs(r.pnl); }).concat([1]));
     var midX = labelW + (W - labelW - valueW) / 2;
@@ -228,6 +228,7 @@
     var svg = el("svg", { viewBox: "0 0 " + W + " " + H });
     svg.appendChild(el("line", { x1: midX, y1: 2, x2: midX, y2: H - 2, "class": "axis-line" }));
 
+    var negLabels = [];
     rows.forEach(function (r, i) {
       var cy = padTop + i * rowH + rowH / 2;
       svg.appendChild(el("text", { x: labelW - 10, y: cy + 4, "text-anchor": "end", "class": "bar-label" },
@@ -238,13 +239,23 @@
         x: pos ? midX : midX - w, y: cy - 8, width: w, height: 16, rx: 3,
         fill: pos ? cssVar("--green") : cssVar("--red"), opacity: 0.85
       }));
-      svg.appendChild(el("text", {
+      var vt = el("text", {
         x: pos ? midX + w + 7 : midX - w - 7, y: cy + 4,
         "text-anchor": pos ? "start" : "end",
         fill: pos ? cssVar("--green") : cssVar("--red"), "font-size": 11.5, "font-weight": 600
-      }, fmtMoney(r.pnl, { plus: true })));
+      }, fmtMoney(r.pnl, { plus: true }));
+      svg.appendChild(vt);
+      if (!pos) negLabels.push({ t: vt, w: w });
     });
     container.appendChild(svg);
+    // a wide negative bar pushes its value label into the row-name zone;
+    // flip those labels to the free (positive) side of the axis instead
+    negLabels.forEach(function (n) {
+      if (midX - n.w - 7 - n.t.getComputedTextLength() < labelW) {
+        n.t.setAttribute("x", midX + 7);
+        n.t.setAttribute("text-anchor", "start");
+      }
+    });
   }
 
   /* ---- public API ---- */
