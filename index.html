@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Journal</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+  <div class="header-inner">
+    <h1><span class="logo-mark">◧</span> Trading Journal</h1>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="dashboard" role="tab">Dashboard</button>
+      <button class="tab" data-view="trades" role="tab">Trades</button>
+      <button class="tab" data-view="calendar" role="tab">Calendar</button>
+    </nav>
+    <div class="header-actions">
+      <button id="btnExport" class="btn ghost" title="Export all trades as CSV">Export CSV</button>
+      <button id="btnImport" class="btn ghost" title="Import trades from CSV">Import CSV</button>
+      <button id="btnSeed" class="btn ghost" title="Load sample trades">Sample Data</button>
+      <button id="btnNewTrade" class="btn primary">+ Log Trade</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ DASHBOARD ============ -->
+  <section id="view-dashboard" class="view active">
+    <div class="stat-grid" id="statGrid"></div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Equity Curve</h2>
+        <span class="hint" id="equityHint"></span>
+      </div>
+      <div id="equityChart" class="chart"></div>
+    </div>
+
+    <div class="chart-row">
+      <div class="panel">
+        <div class="panel-head"><h2>P&amp;L by Setup</h2></div>
+        <div id="setupChart" class="chart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>P&amp;L by Weekday</h2></div>
+        <div id="weekdayChart" class="chart"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRADES ============ -->
+  <section id="view-trades" class="view">
+    <div class="panel">
+      <div class="filter-bar">
+        <input type="search" id="fPair" placeholder="Pair (e.g. BTCUSD)" list="pairList">
+        <datalist id="pairList"></datalist>
+        <select id="fSetup"><option value="">All setups</option></select>
+        <select id="fResult">
+          <option value="">All results</option>
+          <option value="win">Wins</option>
+          <option value="loss">Losses</option>
+          <option value="be">Breakeven</option>
+        </select>
+        <label class="date-label">From <input type="date" id="fFrom"></label>
+        <label class="date-label">To <input type="date" id="fTo"></label>
+        <button id="btnClearFilters" class="btn ghost sm">Clear</button>
+      </div>
+      <div class="table-wrap">
+        <table id="tradeTable">
+          <thead>
+            <tr>
+              <th data-sort="date">Date</th>
+              <th data-sort="pair">Pair</th>
+              <th data-sort="side">Side</th>
+              <th data-sort="entry" class="num">Entry</th>
+              <th data-sort="exit" class="num">Exit</th>
+              <th data-sort="size" class="num">Size</th>
+              <th data-sort="pnl" class="num">Net P&amp;L</th>
+              <th data-sort="r" class="num">R</th>
+              <th data-sort="setup">Setup</th>
+              <th data-sort="strategy">Strategy</th>
+              <th data-sort="rating" class="num">★</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tradeTbody"></tbody>
+        </table>
+        <p id="emptyTrades" class="empty-msg hidden">No trades match. Log a trade or adjust filters.</p>
+      </div>
+      <div class="table-foot" id="tableFoot"></div>
+    </div>
+  </section>
+
+  <!-- ============ CALENDAR ============ -->
+  <section id="view-calendar" class="view">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Daily P&amp;L Heatmap</h2>
+        <div class="cal-nav">
+          <button id="calPrev" class="btn ghost sm">‹</button>
+          <span id="calLabel"></span>
+          <button id="calNext" class="btn ghost sm">›</button>
+        </div>
+      </div>
+      <div class="cal-weekdays" id="calWeekdays"></div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-summary" id="calSummary"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ TRADE MODAL ============ -->
+<div id="tradeModal" class="modal-backdrop hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">Log Trade</h2>
+      <button class="icon-btn" id="btnCloseModal" aria-label="Close">✕</button>
+    </div>
+    <form id="tradeForm" novalidate>
+      <div class="form-grid">
+        <label>Date
+          <input type="date" name="date" required>
+        </label>
+        <label>Pair
+          <input type="text" name="pair" placeholder="BTCUSD" required>
+        </label>
+        <label>Side
+          <select name="side">
+            <option value="long">Long</option>
+            <option value="short">Short</option>
+          </select>
+        </label>
+        <label>Entry
+          <input type="number" name="entry" step="any" min="0" required>
+        </label>
+        <label>Exit
+          <input type="number" name="exit" step="any" min="0" required>
+        </label>
+        <label>Stop loss <span class="opt">(for R multiple)</span>
+          <input type="number" name="stopLoss" step="any" min="0">
+        </label>
+        <label>Size (units)
+          <input type="number" name="size" step="any" min="0" required>
+        </label>
+        <label>Fees
+          <input type="number" name="fees" step="any" min="0" value="0">
+        </label>
+        <label>Setup
+          <input type="text" name="setup" placeholder="Breakout" list="setupList">
+          <datalist id="setupList"></datalist>
+        </label>
+        <label>Strategy
+          <input type="text" name="strategy" placeholder="Trend following" list="strategyList">
+          <datalist id="strategyList"></datalist>
+        </label>
+        <label>Rating
+          <select name="rating">
+            <option value="1">1 — poor execution</option>
+            <option value="2">2</option>
+            <option value="3" selected>3 — ok</option>
+            <option value="4">4</option>
+            <option value="5">5 — textbook</option>
+          </select>
+        </label>
+        <label class="full">Notes
+          <textarea name="notes" rows="3" placeholder="What did you see? What would you do differently?"></textarea>
+        </label>
+      </div>
+
+      <fieldset class="rules-box">
+        <legend>Pre-entry rules checklist</legend>
+        <div id="rulesList"></div>
+        <p class="rules-hint" id="rulesHint">Check every rule before saving.</p>
+      </fieldset>
+
+      <div class="modal-foot">
+        <button type="button" class="btn danger ghost hidden" id="btnDeleteTrade">Delete</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost" id="btnCancelModal">Cancel</button>
+        <button type="submit" class="btn primary" id="btnSaveTrade" disabled>Save Trade</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".csv,text/csv" class="hidden">
+<div id="toast" class="toast hidden"></div>
+
+<script src="analytics.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
